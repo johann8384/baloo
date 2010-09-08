@@ -5,12 +5,15 @@ from scipy.cluster.vq import vq, kmeans, whiten
 from sparsematrix import read_sparse_matrix, read_feature_index
 import matplotlib.pyplot as plt
 
-feature_index = read_feature_index("feature-index.txt")
-print "Feature Index: contains %d features" % (len(feature_index))
-x = read_sparse_matrix("data-matrix.txt", len(feature_index))
-#y = pdist(x, 'euclidean')
-z = linkage(x, method='centroid')
-#fc = fcluster(z, t=100, criterion='maxclust')
+def read_matrix(feature_index_filename="feature-index.txt", \
+				data_matrix_filename="data-matrix.txt", \
+				verbose=False):
+	feature_index = read_feature_index(feature_index_filename)
+	if verbose:
+		print "Feature Index: contains %d features" % (len(feature_index))
+	x = read_sparse_matrix(data_matrix_filename, len(feature_index))
+	return [f, x]
 
-# kmeans
-#centroids,labels = kmeans(x, 50)
+if __name__=="__main__":
+	features, mat = read_matrix(verbose=True)
+	z = linkage(x, method='centroid')
