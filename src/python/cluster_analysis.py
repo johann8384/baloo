@@ -1,4 +1,4 @@
-from numpy import zeros, array
+import numpy as np
 from scipy.spatial.distance import *
 from scipy.cluster.hierarchy import *
 from scipy.cluster.vq import *
@@ -33,23 +33,34 @@ if __name__=="__main__":
 	#y = pdist(x, metric='jaccard')
 	#z = linkage(y)
 	
-	k = 100
+	k = 10
 	codebook, distortion = kmeans(x, k)
 	codes, dist = vq(x, codebook)
 	clusters = []
-	for i in range(0, len(oid_sigs)):
-	    clusters.append([])
+	for i in range(0, k):
+	    clusters.append({})
 	
 	for i in range(0, len(oid_sigs)):
 	    oid = oid_sigs[i][0]
 	    sig = oid_sigs[i][1]
 	    cluster_id = codes[i]
-	    clusters[cluster_id].append(sig)
+	    clusters[cluster_id].setdefault(sig, 0)
+	    clusters[cluster_id][sig] += 1
 	    
 	plt.title("K=%d" % (k))
 	plt.hist(codes, k)
 	plt.savefig("kmeans-%d.png" % (k))
 	
+	
+	cluster_uniq_sig_counts = map(lambda c: len(c), clusters)
+	ind = np.arange(len(cluster_uniq_sig_counts))
+	fig = plt.figure()
+	fig.suptitle("Unique Signature Counts by Cluster")
+	ax = fig.add_subplot(111)
+	ax.set_ylabel('Count')
+	ax.bar(ind, cluster_uniq_sig_counts)
+	plt.savefig("kmeans-%d-sigdist.png" % (k))
+    
 	'''
 	t = to_tree(z)
 	dict_tree = {}
