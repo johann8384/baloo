@@ -6,8 +6,8 @@ from sparsematrix import *
 import matplotlib.pyplot as plt
 import json
 
-def read_matrix(feature_index_filename="data/feature-index.txt", \
-				data_matrix_filename="data/data-matrix-with-sigs.txt", \
+def read_matrix(feature_index_filename="feature-index.txt", \
+				data_matrix_filename="data-matrix-with-sigs.txt", \
 				verbose=False):
 	f = read_feature_index(feature_index_filename)
 	if verbose:
@@ -16,6 +16,19 @@ def read_matrix(feature_index_filename="data/feature-index.txt", \
 	oids = read_obs_ids(data_matrix_filename)
 	
 	return [f, x, oids]
+
+#
+def read_matrix(feature_index_filename="feature-index.txt", \
+				data_matrix_filename="data-matrix-with-sigs.txt", \
+				verbose=False):
+	f = read_feature_index(feature_index_filename)
+	if verbose:
+		print "Feature Index: contains %d features" % (len(f))
+	x = read_sparse_matrix(data_matrix_filename, len(f))
+	oids = read_obs_ids(data_matrix_filename)
+	
+	return [f, x, oids]
+
 
 def walk(node, parent_id):
     yield (node.get_id(), parent_id)
@@ -52,7 +65,7 @@ if __name__=="__main__":
 	plt.savefig("kmeans-%d.png" % (k))
 	
 	
-	cluster_uniq_sig_counts = map(lambda c: len(c), clusters)
+	cluster_uniq_sig_counts = map(len, clusters)
 	ind = np.arange(len(cluster_uniq_sig_counts))
 	fig = plt.figure()
 	fig.suptitle("Unique Signature Counts by Cluster")
