@@ -22,3 +22,11 @@ libraryDependencies += "org.codehaus.jackson" % "jackson-mapper-asl" % "1.9.7"
 
 libraryDependencies += "org.apache.kafka" % "kafka-core" % "0.7.0" changing()
 
+// append several options to the list of options passed to the Java compiler
+javacOptions ++= Seq("-source", "1.6", "-target", "1.6")
+
+// Copy all managed dependencies to <build-root>/lib_managed/
+//   This is essentially a project-local cache and is different
+//   from the lib_managed/ in sbt 0.7.x.  There is only one
+//   lib_managed/ in the build root (not per-project).
+retrieveManaged := true
