@@ -24,7 +24,7 @@ import org.jboss.netty.channel.{
 import org.jboss.netty.handler.codec.http._
 import com.twitter.finagle.transport.TransportFactory
 
-case class BalooHttp(
+case class CompressedHttp(
     _compressionLevel: Int = 0,
     _maxRequestSize: StorageUnit = 1.megabyte,
     _maxResponseSize: StorageUnit = 1.megabyte,
@@ -136,12 +136,12 @@ case class BalooHttp(
   }
 }
 
-object BalooHttp {
-  def get() = new BalooHttp()
+object CompressedHttp {
+  def get() = new CompressedHttp()
 }
 
-case class BalooRichHttp[REQUEST <: Request](
-     httpFactory: BalooHttp)
+case class CompressedRichHttp[REQUEST <: Request](
+     httpFactory: CompressedHttp)
   extends CodecFactory[REQUEST, Response] {
 
   def client = { config =>

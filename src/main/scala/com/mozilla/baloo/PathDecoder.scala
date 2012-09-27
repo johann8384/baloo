@@ -5,10 +5,9 @@ import scala.util.matching._
 object PathDecoder {
     val uriPattern = new Regex("^/([^/]+)/*([^/]*)$", "ns", "id")
     def getPathElements(uri: String): List[String] = {
-        var iter = uriPattern.findAllIn(uri).matchData 
-        if (iter.hasNext) {
-            var m = iter.next
-            m.subgroups   
+        var m = uriPattern.findFirstMatchIn(uri)
+        if (m != None) {
+            m.get.subgroups
         } else {
             List[String]()
         }

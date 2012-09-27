@@ -20,52 +20,44 @@
 package com.mozilla.baloo.validator;
 
 import java.io.IOException;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 
 public class Validator {
 
     private static final Logger LOG = Logger.getLogger(Validator.class);
     
     private final Pattern validNamespacePattern;
-    private final Pattern validUriPattern;
     private final JsonFactory jsonFactory;
     
-    public Validator(final Set<String> validMapNames) {
+    public Validator(final String[] validNamespaces) {
+        if (validNamespaces == null || validNamespaces.length == 0) {
+            throw new IllegalArgumentException("No valid namespace was specified");
+        }
         StringBuilder nsPatternBuilder = new StringBuilder("(");
-        StringBuilder uriPatternBuilder = new StringBuilder("/(");
-        int i=0, size=validMapNames.size();
-        for (String name : validMapNames) {
+        int i=0, size=validNamespaces.length;
+        for (String name : validNamespaces) {
             nsPatternBuilder.append(name.replaceAll("\\*", ".+"));
-            uriPatternBuilder.append(name.replaceAll("\\*", ".+"));
             if ((i+1) < size) {
                 nsPatternBuilder.append("|");
-                uriPatternBuilder.append("|");
             }
             i++;
         }
         nsPatternBuilder.append(")");
-        uriPatternBuilder.append(")/*([^/]*)");
         LOG.info("Namespace pattern: " + nsPatternBuilder.toString());
         validNamespacePattern = Pattern.compile(nsPatternBuilder.toString());
-        LOG.info("URI pattern: " + uriPatternBuilder.toString());
-        validUriPattern = Pattern.compile(uriPatternBuilder.toString());
         
         jsonFactory = new JsonFactory();
     }
     
     public boolean isValidNamespace(String ns) {
         return validNamespacePattern.matcher(ns).find();
-    }
-    
-    public boolean isValidUri(String uri) {
-        return validUriPattern.matcher(uri).find();
     }
 
     public boolean isValidJson(String json) {

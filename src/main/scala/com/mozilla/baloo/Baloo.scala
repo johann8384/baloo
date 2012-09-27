@@ -2,7 +2,7 @@ package com.mozilla.baloo
 
 import com.twitter.finagle.{Service, SimpleFilter}
 import com.twitter.finagle.builder.{Server, ServerBuilder}
-import com.twitter.finagle.http.{Request, Response, BalooHttp, BalooRichHttp}
+import com.twitter.finagle.http.{Request, Response, CompressedHttp, CompressedRichHttp}
 import com.twitter.util.Future
 import com.mozilla.baloo.validator.Validator
 import java.net.InetSocketAddress
@@ -15,8 +15,11 @@ import org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1
 import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
 import org.jboss.netty.util.CharsetUtil.UTF_8
 import scala.collection.JavaConversions
+import com.mozilla.bagheera.BagheeraProto.BagheeraMessage
+import com.mozilla.bagheera.BagheeraProto.BagheeraMessage.Operation
+import com.google.protobuf.ByteString
 
-object Bagheera {
+object Baloo {
     
     class ExceptionHandler extends SimpleFilter[Request, Response] {
         def apply(request: Request, service: Service[Request, Response]) = {
@@ -36,12 +39,10 @@ object Bagheera {
         }
     }
     
-    class AccessHandler(validator: Validator) extends SimpleFilter[Request, Response] {
+    class AccessFilter(validator: Validator) extends SimpleFilter[Request, Response] {
         def apply(request: Request, service: Service[Request, Response]) = {
             val pathElements = PathDecoder.getPathElements(request.getUri())
-            if (!validator.isValidUri(request.getUri())) {
-                Future.exception(new SecurityException("Tried to access invalid resource"))
-            } else if (pathElements.size < 1 || !validator.isValidNamespace(pathElements(0))) {
+            if (pathElements.size < 1 || !validator.isValidNamespace(pathElements(0))) {
                 Future.exception(new SecurityException("Tried to access invalid resource"))
             } else if (!(request.getMethod() == HttpMethod.POST || request.getMethod() == HttpMethod.PUT)) {
                 Future.exception(new SecurityException("Tried to access " + request.getMethod() + " resource"))
@@ -51,34 +52,30 @@ object Bagheera {
         }
     }
     
-    class KafkaService extends Service[Request, Response] {
+    class KafkaService(producer: Producer[String,BagheeraMessage]) extends Service[Request, Response] {
         def apply(request: Request) = {
-            val pathElements = PathDecoder.getPathElements(request.getUri())
+            val pathElements = PathDecoder.getPathElements(request.getUri())            
             var ns: String = {
                 pathElements.size match {
                     case 2 => pathElements(0)
-                    case 1 => pathElements(0)
                     case _ => ""
                 }
             }
             var id: String = {
-                pathElements.size match {
-                    case 2 => 
-                        if (pathElements(1).length() == 0) {
-                            UUID.randomUUID().toString()
-                        } else {
-                            pathElements(1)
-                        }
-                    case 1 => UUID.randomUUID().toString()
-                    case _ => ""
+                pathElements(1).length match {
+                    case 0 => UUID.randomUUID().toString()
+                    case _ => pathElements(1)
                 }
             }
 
             var content = request.getContent();
             if (content.readable() && content.readableBytes() > 0) {
-                var sb = new StringBuilder(id)
-                sb.append("\u0001")
-                sb.append(content.toString(UTF_8))
+                var bmsgBuilder = BagheeraMessage.newBuilder()
+                bmsgBuilder.setNamespace(ns)
+                bmsgBuilder.setId(id)
+                bmsgBuilder.setPayload(ByteString.copyFrom(content.toByteBuffer()))
+                bmsgBuilder.setTimestamp(System.currentTimeMillis())
+                producer.send(new ProducerData[String,BagheeraMessage](ns, bmsgBuilder.build()))
             }
             val response = new DefaultHttpResponse(HTTP_1_1, CREATED)
             response.setContent(copiedBuffer(id, UTF_8))
@@ -91,21 +88,29 @@ object Bagheera {
             case Some(port) => port.toInt
             case None => 8080
         }
-        val validNamespaces = Set("telemetry")
-        val validator = new Validator(JavaConversions.setAsJavaSet(validNamespaces))
+        val validNamespaces = Array[String]("telemetry")
+        val validator = new Validator(validNamespaces)
         
         // setup kafka producer
-        //val props = new Properties
-        //val producerConfig = new ProducerConfig(props)
-        //val producer = new Producer(producerConfig)
+        val props = new java.util.Properties
+        val in = getClass.getResourceAsStream("/kafka.producer.properties")
+        try {
+            props.load(in)
+        } finally {
+            if (in != None) {
+                in.close()
+            }
+        }
+        val producerConfig = new ProducerConfig(props)
+        val producer = new Producer[String,BagheeraMessage](producerConfig)
         
         val exceptionHandler = new ExceptionHandler
-        val accessHandler = new AccessHandler(validator)
-        val kafkaService = new KafkaService
+        val accessFilter = new AccessFilter(validator)
+        val kafkaService = new KafkaService(producer)
         val restService: Service[Request, Response] 
-            = exceptionHandler andThen accessHandler andThen kafkaService
+            = exceptionHandler andThen accessFilter andThen kafkaService
         val server: Server = ServerBuilder()
-            .codec(BalooRichHttp[Request](BalooHttp()))
+            .codec(CompressedRichHttp[Request](CompressedHttp()))
             .bindTo(new InetSocketAddress(port))
             .name("baloo")
             .build(restService)
