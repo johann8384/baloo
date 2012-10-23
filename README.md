@@ -23,13 +23,13 @@ Make sure your Kafka and Zookeeper servers are running first (see Kafka document
 
 In order to run baloo on another machine you will probably want to use the dist assembly like so:
 
-mvn assembly:assembly
+`mvn assembly:assembly`
 
 The zip file now under the target directory should be deployed to BALOO_HOME on the remote server.
 
 To run Baloo you can use bin/baloo or copy the init.d script by the same name from bin/init.d to /etc/init.d. The init script assumes an installation of baloo at /usr/lib/baloo, but this can be modified by changing the BALOO_HOME variable near the top of that script. Here is an example of using the regular baloo script:
 
-bin/baloo 8080
+`bin/baloo 8080`
 
 ### REST Request Format ###
 
