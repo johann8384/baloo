@@ -76,20 +76,20 @@
 		<dependency>
 			<groupId>com.twitter</groupId>
 			<artifactId>finagle-core</artifactId>
-			<version>5.3.19</version>
+			<version>5.3.23</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.twitter</groupId>
 			<artifactId>finagle-http</artifactId>
-			<version>5.3.19</version>
+			<version>5.3.23</version>
 			<scope>compile</scope>
 		</dependency>
 		<!-- Kafka -->
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-core</artifactId>
-			<version>0.7.1-incubating</version>
+			<version>0.7.2-incubating</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.sgroschupf</groupId>

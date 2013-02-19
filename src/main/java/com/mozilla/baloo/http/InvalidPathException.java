@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Mozilla Corporation
+ * Copyright 2012 Mozilla Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,17 +17,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mozilla.baloo;
+package com.mozilla.baloo.http;
 
-public class SecurityException extends Exception {
+public class InvalidPathException  extends Exception {
 
-    private static final long serialVersionUID = 480106127340879943L;
+    private static final long serialVersionUID = -2753373949363309083L;
 
-    public SecurityException(String message) {
+    public InvalidPathException(String message) {
         super(message);
     }
     
-    public SecurityException(String message, Throwable cause) {
+    public InvalidPathException(String message, Throwable cause) {
         super(message, cause);
     }
+    
 }

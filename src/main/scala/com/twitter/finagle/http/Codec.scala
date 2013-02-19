@@ -2,7 +2,7 @@ package com.twitter.finagle.http
 
 /**
  * This is a near exact copy of the standard HTTP codec in finagle with the exception of adding
- * the HttpContentDecompressor to the server. This allows decompression of GZIP POST body.
+ * the HttpContentDecompressor to the server. This allows decompression of GZIP/Deflate POST body.
  *
  * This code is required to live in the finagle http package for now due to some private classes 
  * in the actual finagle-http code base.
@@ -23,6 +23,7 @@ import org.jboss.netty.channel.{
   ChannelEvent, ChannelHandlerContext, SimpleChannelDownstreamHandler, MessageEvent}
 import org.jboss.netty.handler.codec.http._
 import com.twitter.finagle.transport.TransportFactory
+import com.mozilla.baloo.http.ContentEncodingCorrector
 
 case class CompressedHttp(
     _compressionLevel: Int = 0,
@@ -104,6 +105,7 @@ case class CompressedHttp(
             new HttpChunkAggregator(maxRequestSizeInBytes))
           
           if (_decompressionEnabled)
+            pipeline.addLast("encodingCorrector", new ContentEncodingCorrector)
             pipeline.addLast("httpDecompressor", new HttpContentDecompressor)
                 
           _annotateCipherHeader foreach { headerName: String =>
